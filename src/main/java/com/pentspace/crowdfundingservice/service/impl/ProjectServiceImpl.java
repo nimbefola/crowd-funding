@@ -50,14 +50,16 @@ public class ProjectServiceImpl implements ProjectService {
             String debitResponse = accountServiceClient.debitBalance(sourceAccount, amount);
             if(debitResponse.equalsIgnoreCase("Successful")){
                 Project project = getById(projectId);
+                log.info(" Project initial contribution [{}]", project.getAmountContributed());
                 project.setAmountContributed(project.getAmountContributed().add(new BigDecimal(amount)));
                 projectRepository.save(project);
+                log.info(" Current contribution [{}]", project.getAmountContributed());
                 Transaction transaction = prepareTransaction(projectId, sourceAccount, amount);
                 transaction = transactionServiceClient.create(transaction);
                 if(Objects.isNull(transaction.getId())){
                     return "Failed";
                 }
-                emailServiceClient.sendEmail(account.getEmail(), transaction.getOtp(), "PROJECT FUNDING OTP");
+                emailServiceClient.sendEmail(account.getEmail(), transaction.getOtp(), " PROJECT FUNDING OTP ");
                 return "Successful";
             }else{
                 return "Failed";

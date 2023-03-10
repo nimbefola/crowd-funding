@@ -43,7 +43,7 @@ public class ProjectEndpoint {
     }
 
     @PostMapping(path = "/picture/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<Project> uploadProfilePicture(@RequestParam("id") String id, @RequestParam("file") MultipartFile file) {
+    public ResponseEntity<Project> uploadProjectPicture(@RequestParam("id") String id, @RequestParam("file") MultipartFile file) {
         return new ResponseEntity<>(projectService.uploadProjectPicture(id, file),HttpStatus.OK);
     }
 
