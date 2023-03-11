@@ -1,15 +1,17 @@
 package com.pentspace.crowdfundingservice.service.impl;
 
 import com.pentspace.crowdfundingservice.clients.AccountServiceClient;
-import com.pentspace.crowdfundingservice.clients.EmailServiceClient;
 import com.pentspace.crowdfundingservice.clients.TransactionServiceClient;
 import com.pentspace.crowdfundingservice.dto.Account;
+import com.pentspace.crowdfundingservice.dto.FundProjectDTO;
 import com.pentspace.crowdfundingservice.dto.Transaction;
 import com.pentspace.crowdfundingservice.entities.Project;
 import com.pentspace.crowdfundingservice.entities.enums.Status;
+import com.pentspace.crowdfundingservice.entities.enums.TransactionSource;
 import com.pentspace.crowdfundingservice.entities.enums.TransactionType;
 import com.pentspace.crowdfundingservice.entities.repositories.ProjectRepository;
 import com.pentspace.crowdfundingservice.service.FileUploadService;
+import com.pentspace.crowdfundingservice.service.HashManagerHandler;
 import com.pentspace.crowdfundingservice.service.ProjectService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -33,7 +33,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Autowired
     private AccountServiceClient accountServiceClient;
     @Autowired
-    private EmailServiceClient emailServiceClient;
+    private HashManagerHandler hashManagerHandler;
+
     @Override
     public Project createProject(Project project) {
         project.setStatus(Status.PENDING);
@@ -41,29 +42,29 @@ public class ProjectServiceImpl implements ProjectService {
     }
 
     @Override
-    public String fundProject(String projectId, String sourceAccount, String amount) {
+    public String fundProject(FundProjectDTO fundProjectDTO) {
         try{
-            Account account = accountServiceClient.getAccount(sourceAccount);
-            if(account.getBalance().compareTo(new BigDecimal(amount)) < 0 ){
+            Project project = getById(fundProjectDTO.getProjectId());
+            Account sourceAccount = accountServiceClient.getAccount(fundProjectDTO.getSourceAccountId());
+            Account beneficiaryAccount = accountServiceClient.getAccount(project.getAccountId());
+            if(sourceAccount.getBalance().compareTo(new BigDecimal(fundProjectDTO.getAmount())) < 0 ){
                 throw new RuntimeException("Account balance is lesser than amount");
             }
-            String debitResponse = accountServiceClient.debitBalance(sourceAccount, amount);
-            if(debitResponse.equalsIgnoreCase("Successful")){
-                Project project = getById(projectId);
-                log.info(" Project initial contribution [{}]", project.getAmountContributed());
-                project.setAmountContributed(project.getAmountContributed().add(new BigDecimal(amount)));
-                projectRepository.save(project);
-                log.info(" Current contribution [{}]", project.getAmountContributed());
-                Transaction transaction = prepareTransaction(projectId, sourceAccount, amount);
-                transaction = transactionServiceClient.create(transaction);
-                if(Objects.isNull(transaction.getId())){
-                    return "Failed";
-                }
-                emailServiceClient.sendEmail(account.getEmail(), transaction.getOtp(), " PROJECT FUNDING OTP ");
-                return "Successful";
-            }else{
+            validatePin(sourceAccount.getPin(), fundProjectDTO.getTransactionPin());
+            Transaction transaction = prepareTransaction(fundProjectDTO.getProjectId(), fundProjectDTO.getSourceAccountId(), fundProjectDTO.getAmount());
+            transaction = transactionServiceClient.create(transaction);
+            if(Objects.isNull(transaction.getId())){
                 return "Failed";
             }
+            log.info(" Contributing to Project [{}] with initial contribution [{}]", project.getId(), project.getAmountContributed());
+            project.setAmountContributed(project.getAmountContributed().add(new BigDecimal(fundProjectDTO.getAmount())));
+            projectRepository.save(project);
+            log.info(" Current contribution [{}]", project.getAmountContributed());
+            sourceAccount.setBalance(sourceAccount.getBalance().subtract(new BigDecimal(fundProjectDTO.getAmount())));
+            beneficiaryAccount.setBalance(beneficiaryAccount.getBalance().add(new BigDecimal(fundProjectDTO.getAmount())));
+            List<Account> accounts = new ArrayList<>(Arrays.asList(sourceAccount, beneficiaryAccount));
+            accountServiceClient.updateBalances(accounts);
+            return "Successful";
         }catch (Exception exception){
             log.error(" An error occurred [{}]", exception.getMessage(), exception);
             return "Failed";
@@ -106,8 +107,16 @@ public class ProjectServiceImpl implements ProjectService {
         transaction.setTransactionType(TransactionType.DONATION);
         transaction.setAmount(new BigDecimal(amount));
         transaction.setDestinationAccount(projectId);
-        transaction.setStatus(Status.PENDING);
+        transaction.setStatus(Status.COMPLETED);
         transaction.setSourceAccount(sourceAccount);
+        transaction.setTransactionSource(TransactionSource.PROJECT);
         return transaction;
     }
+
+    public void validatePin(String accountPin, String transactionPin){
+        if(!hashManagerHandler.validateData(transactionPin, accountPin)){
+            throw new RuntimeException("Invalid Pin");
+        }
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.pentspace.crowdfundingservice.dto;
 
 import com.pentspace.crowdfundingservice.entities.enums.Status;
+import com.pentspace.crowdfundingservice.entities.enums.TransactionSource;
 import com.pentspace.crowdfundingservice.entities.enums.TransactionType;
 import lombok.Data;
 
@@ -17,4 +18,5 @@ public class Transaction {
     private String otp;
     private String otpStatus;
     private String metaData;
+    private TransactionSource transactionSource;
 }

@@ -1,5 +1,6 @@
 package com.pentspace.crowdfundingservice.endpoints;
 
+import com.pentspace.crowdfundingservice.dto.FundProjectDTO;
 import com.pentspace.crowdfundingservice.entities.Project;
 import com.pentspace.crowdfundingservice.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @RestController
@@ -32,13 +34,13 @@ public class ProjectEndpoint {
         return ResponseEntity.ok(projectService.getAll());
     }
 
-    @PostMapping(path = "/fund", produces = "application/json")
-    public ResponseEntity<String> fund(@RequestParam("projectId") String projectId, @RequestParam("accountId") String accountId,@RequestParam("amount") String amount){
-        return ResponseEntity.ok(projectService.fundProject(projectId, accountId, amount));
+    @PostMapping(path = "/fund", consumes = "application/json", produces = "application/json")
+    public ResponseEntity<String> fund(@Valid @RequestBody FundProjectDTO fundProjectDTO){
+        return ResponseEntity.ok(projectService.fundProject(fundProjectDTO));
     }
 
     @GetMapping(path = "account/{id}", produces = "application/json")
-    public ResponseEntity<List<Project>> getByAccountId(@PathVariable ("id") String id){
+    public ResponseEntity<List<Project>> getProjectByAccountId(@PathVariable ("id") String id){
         return ResponseEntity.ok(projectService.getByAccountId(id));
     }
 
