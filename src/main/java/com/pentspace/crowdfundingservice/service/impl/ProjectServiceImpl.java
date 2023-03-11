@@ -59,7 +59,7 @@ public class ProjectServiceImpl implements ProjectService {
             log.info(" Contributing to Project [{}] with initial contribution [{}]", project.getId(), project.getAmountContributed());
             project.setAmountContributed(project.getAmountContributed().add(new BigDecimal(fundProjectDTO.getAmount())));
             projectRepository.save(project);
-            log.info(" Current contribution [{}]", project.getAmountContributed());
+            log.info(" Current contribution [{}] when source account balance [{}] and beneficiary account balance is [{}]", project.getAmountContributed(), sourceAccount.getBalance(), beneficiaryAccount.getBalance());
             sourceAccount.setBalance(sourceAccount.getBalance().subtract(new BigDecimal(fundProjectDTO.getAmount())));
             beneficiaryAccount.setBalance(beneficiaryAccount.getBalance().add(new BigDecimal(fundProjectDTO.getAmount())));
             List<Account> accounts = new ArrayList<>(Arrays.asList(sourceAccount, beneficiaryAccount));
