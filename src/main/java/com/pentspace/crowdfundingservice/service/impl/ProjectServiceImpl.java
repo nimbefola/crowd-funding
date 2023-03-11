@@ -73,9 +73,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public Project getById(String id) {
-        Project project = projectRepository.findById(id).orElseThrow(()->new NoSuchElementException("Project not found"));
-        project.setProjectBase64Image(fileUploadService.readAndConvertImageToBase64Read(project.getId()));
-        return project;
+        return projectRepository.findById(id).orElseThrow(()->new NoSuchElementException("Project not found"));
     }
 
     @Override

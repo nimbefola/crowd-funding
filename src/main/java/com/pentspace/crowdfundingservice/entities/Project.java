@@ -23,8 +23,6 @@ public class Project extends Base {
     private LocalDate endDate;
     @Enumerated(EnumType.STRING)
     private Status status;
-    @Transient
-    private String projectBase64Image;
 
     public String getAccountId() {
         return accountId;
@@ -88,13 +86,5 @@ public class Project extends Base {
 
     public void setSupportingImageUrl(String supportingImageUrl) {
         this.supportingImageUrl = supportingImageUrl;
-    }
-
-    public String getProjectBase64Image() {
-        return projectBase64Image;
-    }
-
-    public void setProjectBase64Image(String projectBase64Image) {
-        this.projectBase64Image = projectBase64Image;
     }
 }

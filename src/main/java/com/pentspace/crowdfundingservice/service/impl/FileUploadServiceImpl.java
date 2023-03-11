@@ -2,6 +2,7 @@ package com.pentspace.crowdfundingservice.service.impl;
 
 import com.pentspace.crowdfundingservice.service.FileUploadService;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -27,7 +28,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         try {
             PutObjectRequest putObjectRequest = PutObjectRequest.builder()
                     .bucket(bucketName)
-                    .key(entityId)
+                    .key(entityId+ "." + FilenameUtils.getExtension(file.getOriginalFilename()))
                     .build();
 
             S3Client s3Client = getS3Client();
@@ -36,7 +37,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             String url = s3Client.utilities().getUrl(getUrlRequest).toString();
             log.info(" Profile picture URL [{}]", url);
             file.getInputStream().close();
-            return url;
+            return url + "." + FilenameUtils.getExtension(file.getOriginalFilename());
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
