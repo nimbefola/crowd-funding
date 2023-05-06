@@ -1,5 +1,5 @@
 
-CREATE SEQUENCE hibernate_sequence START 1 INCREMENT 1;
+--CREATE SEQUENCE hibernate_sequence START 1 INCREMENT 1;
 
 DROP TABLE IF EXISTS  project;
 create TABLE project (
